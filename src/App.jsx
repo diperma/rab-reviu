@@ -15,7 +15,9 @@ import {
   PieChart,
   FileText,
   Info,
-  HelpCircle
+  HelpCircle,
+  FileSignature,
+  Eye
 } from 'lucide-react';
 
 import rabPdf from './assets/RAB Pem KDKMP.pdf';
@@ -546,10 +548,38 @@ const RAB_DATA = [
         explanation: "Kipas pembuangan udara untuk menjaga sirkulasi dan kelembaban udara."
       }
     ]
+  },
+  {
+    id: 'VII',
+    title: 'Pekerjaan Perencanaan',
+    amount: 46360064.46,
+    icon: <FileSignature className="w-5 h-5" />,
+    items: [
+      {
+        name: 'Biaya Perencanaan Teknis & Desain',
+        total: 46360064.46,
+        unit: 'ls',
+        explanation: "Biaya jasa konsultan perencana untuk pembuatan gambar desain, struktur, dan arsitektur bangunan."
+      }
+    ]
+  },
+  {
+    id: 'VIII',
+    title: 'Pekerjaan Pengawasan',
+    amount: 52155072.51,
+    icon: <Eye className="w-5 h-5" />,
+    items: [
+      {
+        name: 'Biaya Pengawasan Berkala & Supervisi',
+        total: 52155072.51,
+        unit: 'ls',
+        explanation: "Biaya jasa pengawasan di lapangan untuk memastikan pelaksanaan konstruksi sesuai dengan spesifikasi dan gambar rencana."
+      }
+    ]
   }
 ];
 
-const TOTAL_BUDGET = 2996019000;
+const TOTAL_BUDGET = RAB_DATA.reduce((acc, curr) => acc + curr.amount, 0);
 
 /* -------------------------------------------------------------------------- */
 /*                               MAIN COMPONENT                               */
