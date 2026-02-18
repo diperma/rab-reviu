@@ -598,11 +598,19 @@ const App = () => {
   };
 
   const constructionTotal = useMemo(() => {
-    return RAB_DATA.filter(d => d.id !== 'VI').reduce((acc, curr) => acc + curr.amount, 0);
+    // I - V are construction
+    return RAB_DATA.filter(d => ['I', 'II', 'III', 'IV', 'V'].includes(d.id)).reduce((acc, curr) => acc + curr.amount, 0);
   }, []);
 
   const sarprasTotal = useMemo(() => {
-    return RAB_DATA.find(d => d.id === 'VI').amount;
+    // VI is sarpras
+    const data = RAB_DATA.find(d => d.id === 'VI');
+    return data ? data.amount : 0;
+  }, []);
+
+  const planningTotal = useMemo(() => {
+    // VII & VIII are planning/supervision
+    return RAB_DATA.filter(d => ['VII', 'VIII'].includes(d.id)).reduce((acc, curr) => acc + curr.amount, 0);
   }, []);
 
   return (
@@ -661,11 +669,11 @@ const App = () => {
         {activeTab === 'overview' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Ringkasan RAB Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-transparent -mr-10 -mt-10 rounded-full transition-transform group-hover:scale-110" />
                 <h3 className="text-slate-400 text-[10px] font-black mb-2 uppercase tracking-widest">Total Anggaran Proyek</h3>
-                <p className="text-3xl font-black text-blue-900 tracking-tight">{formatCurrency(TOTAL_BUDGET)}</p>
+                <p className="text-2xl font-black text-blue-900 tracking-tight">{formatCurrency(TOTAL_BUDGET)}</p>
                 <div className="flex items-center gap-2 mt-4">
                   <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
                   <p className="text-[10px] text-blue-600 font-bold uppercase">Anggaran Disetujui</p>
@@ -675,20 +683,30 @@ const App = () => {
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-50 to-transparent -mr-10 -mt-10 rounded-full transition-transform group-hover:scale-110" />
                 <h3 className="text-slate-400 text-[10px] font-black mb-2 uppercase tracking-widest">Alokasi Konstruksi</h3>
-                <p className="text-3xl font-black text-slate-800 tracking-tight">{formatCurrency(constructionTotal)}</p>
+                <p className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(constructionTotal)}</p>
                 <div className="flex items-center gap-2 mt-4">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-tighter">Fisik Bangunan</p>
+                  <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-tighter">Fisik Bangunan (I-V)</p>
                 </div>
               </div>
 
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-50 to-transparent -mr-10 -mt-10 rounded-full transition-transform group-hover:scale-110" />
                 <h3 className="text-slate-400 text-[10px] font-black mb-2 uppercase tracking-widest">Alokasi Sarpras</h3>
-                <p className="text-3xl font-black text-blue-600 tracking-tight">{formatCurrency(sarprasTotal)}</p>
+                <p className="text-2xl font-black text-blue-600 tracking-tight">{formatCurrency(sarprasTotal)}</p>
                 <div className="flex items-center gap-2 mt-4">
                   <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                  <p className="text-[10px] text-orange-600 font-bold uppercase tracking-tighter">Peralatan & Kendaraan</p>
+                  <p className="text-[10px] text-orange-600 font-bold uppercase tracking-tighter">Peralatan (VI)</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-50 to-transparent -mr-10 -mt-10 rounded-full transition-transform group-hover:scale-110" />
+                <h3 className="text-slate-400 text-[10px] font-black mb-2 uppercase tracking-widest">Alokasi Perencanaan</h3>
+                <p className="text-2xl font-black text-purple-600 tracking-tight">{formatCurrency(planningTotal)}</p>
+                <div className="flex items-center gap-2 mt-4">
+                  <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                  <p className="text-[10px] text-purple-600 font-bold uppercase tracking-tighter">Pengawasan (VII-VIII)</p>
                 </div>
               </div>
             </div>
