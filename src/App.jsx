@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import {
   LayoutDashboard,
   HardHat,
@@ -17,33 +18,107 @@ import {
   HelpCircle
 } from 'lucide-react';
 
+import rabPdf from './assets/RAB Pem KDKMP.pdf';
+
 /* -------------------------------------------------------------------------- */
 /*                                 COMPONENTS                                 */
 /* -------------------------------------------------------------------------- */
 
 const Tooltip = ({ content, children }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const triggerRef = React.useRef(null);
+  const [coords, setCoords] = React.useState({ top: 0, left: 0 });
+  const [xOffset, setXOffset] = React.useState(0); // Offset to keep tooltip on screen
+
+  const updatePosition = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const tooltipWidth = 256; // w-64 = 16rem = 256px
+      const screenPadding = 16; // Padding from screen edge
+      const centerX = rect.left + rect.width / 2;
+
+      // Calculate projected edges
+      const leftEdge = centerX - tooltipWidth / 2;
+      const rightEdge = centerX + tooltipWidth / 2;
+
+      let offset = 0;
+
+      // Check for left overflow
+      if (leftEdge < screenPadding) {
+        offset = screenPadding - leftEdge;
+      }
+      // Check for right overflow
+      else if (rightEdge > window.innerWidth - screenPadding) {
+        offset = (window.innerWidth - screenPadding) - rightEdge;
+      }
+
+      setCoords({
+        top: rect.top - 10, // Offset above the element
+        left: centerX
+      });
+      setXOffset(offset);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    updatePosition();
+    setIsVisible(true);
+  };
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    updatePosition();
+    setIsVisible(!isVisible);
+  };
+
+  // Close on scroll or resize to prevent floating tooltip
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (isVisible) setIsVisible(false);
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [isVisible]);
 
   return (
-    <div
-      className="relative flex items-center"
-      onMouseEnter={() => setIsVisible(true)}
-      onMouseLeave={() => setIsVisible(false)}
-    >
-      {children}
-      {isVisible && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-900 text-white text-xs rounded-xl shadow-xl z-50 animate-in fade-in zoom-in duration-200 pointer-events-none">
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 rotate-45"></div>
-          <div className="relative z-10 font-medium leading-relaxed">
-            <div className="flex items-center gap-2 mb-1 text-blue-300 font-bold uppercase tracking-wider text-[10px]">
-              <Zap className="w-3 h-3" />
-              AI Explanation
+    <>
+      <div
+        ref={triggerRef}
+        className="relative flex items-center inline-block"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setIsVisible(false)}
+        onClick={handleClick}
+      >
+        {children}
+      </div>
+      {isVisible && ReactDOM.createPortal(
+        <div
+          className="fixed z-[9999] pointer-events-none transition-opacity duration-200"
+          style={{
+            top: coords.top,
+            left: coords.left,
+            transform: 'translate(-50%, -100%)' // Center horizontally and move above
+          }}
+        >
+          <div className="mb-2 w-64 p-3 bg-slate-900 text-white text-xs rounded-xl shadow-xl animate-in fade-in zoom-in duration-200" style={{ transform: `translateX(${xOffset}px)` }}>
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 rotate-45" style={{ transform: `translateX(${-xOffset}px) rotate(45deg)` }}></div>
+
+            <div className="relative z-10 font-medium leading-relaxed">
+              <div className="flex items-center gap-2 mb-1 text-blue-300 font-bold uppercase tracking-wider text-[10px]">
+                <Zap className="w-3 h-3" />
+                AI Explanation
+              </div>
+              {content}
             </div>
-            {content}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 };
 
@@ -481,7 +556,7 @@ const TOTAL_BUDGET = 2996019000;
 /* -------------------------------------------------------------------------- */
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState('details'); // Default to details to show changes immediately
+  const [activeTab, setActiveTab] = useState('overview'); // Default to overview
   const [expandedSection, setExpandedSection] = useState(null);
 
   const formatCurrency = (val) => {
@@ -513,7 +588,7 @@ const App = () => {
               <h1 className="text-xl font-extrabold text-blue-900 tracking-tight uppercase leading-none">
                 Direktorat Pemberdayaan Ekonomi Masyarakat
               </h1>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Reviu Pembangunan Gerai KDKMP</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Rincian Biaya Pembangunan Gerai KDKMP v1.0</p>
             </div>
           </div>
           <div className="flex items-center gap-4 text-xs font-bold bg-blue-50/50 p-2 pr-4 rounded-full border border-blue-100 text-blue-800">
@@ -544,6 +619,12 @@ const App = () => {
             className={`px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeTab === 'details' ? 'bg-white text-blue-700 shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
           >
             Rincian Biaya (RAB)
+          </button>
+          <button
+            onClick={() => setActiveTab('pdf')}
+            className={`px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeTab === 'pdf' ? 'bg-white text-blue-700 shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+          >
+            Dokumen RAB
           </button>
         </div>
 
@@ -588,18 +669,18 @@ const App = () => {
                 <PieChart className="w-4 h-4 text-blue-700" />
                 <h2 className="text-xs font-black text-blue-900 uppercase tracking-widest">Rekapitulasi Alokasi Anggaran per Kategori</h2>
               </div>
-              <div className="p-8">
+              <div className="p-4 md:p-8">
                 <div className="space-y-6">
                   {RAB_DATA.map((section) => {
                     const percentage = (section.amount / TOTAL_BUDGET * 100).toFixed(1);
                     return (
                       <div key={section.id} className="group">
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 w-8 text-center">{section.id}</span>
-                            <span className="text-sm font-bold text-slate-700 group-hover:text-blue-700 transition-colors uppercase tracking-tight">{section.title}</span>
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-2">
+                          <div className="flex items-center gap-3 w-full md:w-auto">
+                            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 w-8 text-center shrink-0">{section.id}</span>
+                            <span className="text-sm font-bold text-slate-700 group-hover:text-blue-700 transition-colors uppercase tracking-tight truncate">{section.title}</span>
                           </div>
-                          <div className="flex items-center gap-6 text-sm">
+                          <div className="flex items-center justify-between w-full md:w-auto gap-6 text-sm pl-11 md:pl-0">
                             <span className="font-bold text-slate-800 font-mono">{formatCurrency(section.amount)}</span>
                             <span className="w-12 text-right font-black text-blue-500 text-xs">{percentage}%</span>
                           </div>
@@ -686,9 +767,9 @@ const App = () => {
                     </button>
 
                     {expandedSection === section.id && (
-                      <div className="bg-slate-50/50 px-6 pb-8 pt-2 animate-in slide-in-from-top-2 duration-300">
-                        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-visible">
-                          <table className="w-full text-left text-sm">
+                      <div className="bg-slate-50/50 px-2 md:px-6 pb-4 md:pb-8 pt-2 animate-in slide-in-from-top-2 duration-300">
+                        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-x-auto">
+                          <table className="w-full text-left text-sm min-w-[600px]">
                             <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
                               <tr>
                                 <th className="px-6 py-4 w-12 text-center rounded-tl-xl">Info</th>
@@ -733,28 +814,52 @@ const App = () => {
                 ))}
               </div>
             </div>
+          </div>
+        )}
 
-            <div className="bg-blue-900 p-10 rounded-2xl text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 -mr-16 -mt-16 rounded-full blur-3xl opacity-50" />
-              <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-500/20 -ml-10 -mb-10 rounded-full blur-2xl opacity-50" />
-
-              <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
-                <div className="max-w-xl">
-                  <p className="text-blue-300 text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <span className="w-8 h-px bg-blue-300"></span> Terbilang
-                  </p>
-                  <p className="text-2xl font-serif italic text-blue-50 leading-relaxed tracking-wide">
-                    "Dua Milyar Sembilan Ratus Sembilan Puluh Enam Juta Sembilan Belas Ribu Rupiah"
-                  </p>
+        {activeTab === 'pdf' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-[80vh]">
+              <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-700" />
+                  <h2 className="text-xs font-black text-blue-900 uppercase tracking-widest">Dokumen Asli RAB</h2>
                 </div>
-                <div className="text-right">
-                  <p className="text-blue-300 text-[10px] font-black uppercase mb-2 tracking-widest">Total Anggaran Pembangunan</p>
-                  <p className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-none">{formatCurrency(TOTAL_BUDGET)}</p>
-                </div>
+                <a
+                  href={rabPdf}
+                  download
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-bold uppercase tracking-wide rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Download PDF
+                </a>
               </div>
+              <iframe
+                src={rabPdf}
+                className="w-full h-full"
+                title="RAB Document"
+              />
             </div>
           </div>
         )}
+        <div className="bg-blue-900 p-10 rounded-2xl text-white shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 -mr-16 -mt-16 rounded-full blur-3xl opacity-50" />
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-500/20 -ml-10 -mb-10 rounded-full blur-2xl opacity-50" />
+
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+            <div className="max-w-xl">
+              <p className="text-blue-300 text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="w-8 h-px bg-blue-300"></span> Terbilang
+              </p>
+              <p className="text-2xl font-serif italic text-blue-50 leading-relaxed tracking-wide">
+                "Dua Milyar Sembilan Ratus Sembilan Puluh Enam Juta Sembilan Belas Ribu Rupiah"
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-blue-300 text-[10px] font-black uppercase mb-2 tracking-widest">Total Anggaran Pembangunan</p>
+              <p className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-none">{formatCurrency(TOTAL_BUDGET)}</p>
+            </div>
+          </div>
+        </div>
       </main>
 
       {/* Footer Stakeholders */}
@@ -784,7 +889,7 @@ const App = () => {
           </div>
           <div className="mt-16 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center text-slate-400 text-[10px] font-bold uppercase tracking-widest gap-4">
             <p>© 2025 Direktorat Pemberdayaan Ekonomi Masyarakat</p>
-            <p className="text-blue-400 font-black">Reviu Pembangunan Gerai KDKMP</p>
+            <p className="text-blue-400 font-black">Rincian Biaya Pembangunan Gerai KDKMP v1.0</p>
           </div>
         </div>
       </footer>
